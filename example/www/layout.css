@@ -1,0 +1,245 @@
+
+/*-General-----------------------------------------------*/
+
+html, body {
+	margin:0px;
+	padding:0px;
+}
+
+form {
+	display:inline;
+	margin:0px;
+	padding:0px;
+}
+
+a img {
+	border:none;
+	margin:0px;
+	padding:0px;
+}
+
+h1, h2, h3, h4, h5, h6, p, div {
+	margin:0px;
+	padding:0px;
+}
+
+.right {
+	float:right;
+}
+
+.left{
+	float:left;
+}
+
+/*-Main Layout-------------------------------------------*/
+
+#overall {
+	/* margin:5px 12px 0px 12px; */
+	padding:0px;
+}
+
+/*-Header-------------*/
+
+.header {
+        /* float:top; */
+	position:relative; 
+	height:55px;
+}
+
+/*-Footer-------------*/
+
+.footer {
+	padding:40px 0px 0px 0px;
+	position:relative;
+	clear:both;
+}
+
+/*-Content Area-------*/
+
+.content {
+	width:100%;
+}
+
+/*-Left Column--------*/
+
+.leftcolumn	{
+  float:left;
+  width:145px;
+  margin:5px;
+}
+
+.leftcolumn .node {
+	margin:0px 0px 15px 0px;
+}
+
+.leftcolumn .node h1 {
+	padding:0px 0px 0px 3px;
+}
+
+.leftcolumn .node ul {
+	margin:0px;
+	padding:0px;
+}
+
+.leftcolumn .node li {
+	display:block;
+	padding:0px 0px 0px 3px;
+	margin:0px;
+}
+
+.leftcolumn .node li.more{
+	padding:0px 0px 0px 6px;
+}
+
+/*-Center Column------*/
+
+.centercolumn {
+        margin: 5px;
+	margin-left:152px;
+        margin-right:140px;
+	font-family:"\"}\"";
+	font-family:inherit;
+}
+
+.centercolumn .node h1 {
+	padding: 0px 0px 0px 13px;
+}
+
+.centercolumn .node h4 {
+	margin: 15px 0px 10px 0px;
+}
+
+.centercolumn .node p {
+	margin: 0px 0px 10px 0px; */
+	padding: 0px 0px 0px 0px;
+}  /* this seemed not to work */
+
+.posts_0  {
+	margin: 0px 0px 0px 0px;
+}
+
+.posts_1  {
+	margin: 0px 0px 0px 20px;
+}
+
+.posts_2  {
+	margin: 0px 0px 0px 40px;
+}
+
+.posts_3  {
+	margin: 0px 0px 0px 60px;
+}
+
+.posts_4  {
+	margin: 0px 0px 0px 80px;
+}
+
+.posts_5  {
+	margin: 0px 0px 0px 100px;
+}
+
+.posts_6  {
+	margin: 0px 0px 0px 120px;
+}
+
+.posts_7  {
+	margin: 0px 0px 0px 140px;
+}
+
+.posts_8  {
+	margin: 0px 0px 0px 160px;
+}
+
+.posts_9  {
+	margin: 0px 0px 0px 160px;
+}
+
+.posts_10  {
+	margin: 0px 0px 0px 180px;
+}
+
+/*-Right Column-------*/
+
+.rightcolumn {
+	float:right;
+        width:130px;
+	margin:5px 5px 0px 0px;
+}
+
+* html .rightcolumn {
+	margin:3px 3px 3px 3px;
+}
+
+body>div .rightcolumn {
+	margin:0px 0px 0px 0px;
+}
+
+.rightcolumn .node {
+	margin:0px 0px 5px 0px;
+	padding:0px;
+}
+
+.rightcolumn .node h2 {
+	margin:3px 3px 3px 2px;
+}
+
+.rightcolumn .node ul {
+  list-style-position:inside;
+  margin:0px;
+  padding:1px;
+}
+
+.rightcolumn .node ul.none {
+	list-style-position:inside;
+}
+
+.rightcolumn .node ul.dot {
+	list-style-position:inside;
+}
+
+.rightcolumn .node ul.books {
+	list-style-position:outside;
+	margin:0px 0px 0px 35px;
+}
+
+.rightcolumn .node li {
+	padding:0px 0px 0px 3px;
+	margin:0px;
+}
+
+/*-Remaining layout--------------------------------------*/
+
+#title {
+	top: 0px;
+	left: 0px;
+	position: absolute;
+}
+
+#search {
+	float:left;
+	margin:0px 0px 0px 30px;
+}
+
+#randomquote {
+	float:right;
+	margin:0px 30px 0px 0px;
+}
+
+#copyright {
+	text-align:center;
+	padding:15px 0px 0px 0px;
+	margin:0px 0px 0px 0px;
+	clear:both;
+}
+
+#bottomNav {
+	text-align:center;
+	margin:0px 0px 20px 0px;
+	padding:0px;
+}
+
+#oldStuffNav {
+	font-weight:bold;
+	text-align:right;
+}
+

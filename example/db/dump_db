@@ -1,0 +1,1 @@
+pg_dump -d kiatoa | grep -v 'INSERT INTO session_vars' | grep -v 'INSERT INTO sessions' > Kiatoa.sql

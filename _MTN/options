@@ -1,0 +1,3 @@
+database "/home/matt/mtn/matt.db"
+  branch "com.kiatoa.stml"
+  keydir "/home/matt/.monotone/keys"

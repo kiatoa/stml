@@ -1,0 +1,12 @@
+These are rough installation instructions. Please contact me at matt@kiatoa.com
+if you have trouble installing.
+
+1. Copy install.cfg.template to install.cfg and modify appropriately
+
+2. Copy stml.config.template to your cgi dir as .stml.config and modify appropriately
+    - choose your db
+
+3. Copy requirements.scm.template to requirements.scm and modify as needed
+    - choose your db (must match what you choose in 2. above)
+
+

@@ -1,0 +1,20 @@
+
+If we had any at all of the alternative voting ideas like instant runoff, Condorcet, any of them, I think it might make the whole process better
+
+My thought was to get people familiar with approval voting, then get people to pledge only to vote for a candidate if that candidate supported approval voting. I put the beginings of a site together here: http://approvalvote.org but stopped working on it because I decided not to push the idea for this election. Morally, in my opinion, letting the neocons in for another term is unacceptable, I suspect (but don't know) that McCain is a participant of the neocon movement. Since these elections can hinge on a few hundreds of votes I thought it wasn't worth even the infintesimal risk of any activity that would get people thinking about the alternatives to the top two pulling votes away from Obama. I did think of pushing the idea in venues dominated by interest in Ron Paul but there was some beer in the fridge and, well, you can guess the rest of that story.
+
+Although the current implementation needs major rework I do think the idea has potential.
+
+   1. Get people to experience plurality vs approval voting. IMHO once you've tried it going back to plurality is actually quite uncomfortable.
+   2. Get people to pledge to vote only for candidates that support approval voting.
+   3. Get candidates to address approval voting.
+
+Now why approval and not Condorcet, range, IRV or any one of the dozens of other voting techniques?
+
+   1. Approval is 100% doable using existing election machines
+   2. Approval is highly resistant to any meaningful strategic voting.
+   3. Approval is easy for the end users. Go try doing some condorcet or IRV ranked voting. It is really tedious.
+   4. IRV is *worse* than Plurality in its vunerablity to strategic voting.
+   5. Condorcet is too hard to grok for most folks. I knew once how it worked but couldn't explain it to someone right now for the life of me.
+
+In short the marginal improvement of the more complex voting solutions over approval doesn't buy much.

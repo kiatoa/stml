@@ -1,0 +1,22 @@
+1. Documentation. 
+      multiple apps in same cgi dir
+      compilation of models for speed and code protection
+      tricks
+2. Hierarchial pages. Currently pages can be hierarchial but the control.scm 
+   doesn't get called at the right time. 
+3. For sqlite3 usage put session into own db?
+4. A mechanism for sharing variables better between control and view
+   would be good.
+   Perhaps:
+     (let ()
+       (load control)
+       (load view))
+5. Change all the "included" files to be seperately compiled units
+   and adj. makefile accordingly. This would speed up compilation
+   when changes are isolated to one or two files.
+6. The dbi interface needs a simple config mecanism alternative to
+   the current list of pairs which is hard to use on the fly. 
+   Something like the perl:
+     "dbi:host:port:user:password"
+
+I'm sure there is more ...

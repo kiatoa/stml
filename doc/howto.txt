@@ -1,0 +1,45 @@
+======================================================================
+1. Create a link.
+
+(s:null "[" (s:a name 'href 
+               (s:link-to (string-append "location/" (string-intersperse p "/") ""))) "] ")))
+
+======================================================================
+2. Call current page with new param
+
+ (s:center "[" (s:a 'href (s:link-to "polls"
+                           'id
+                            (begin
+                              (poll:poll 'fill-polls)
+                              (poll:poll 'get-next-poll)))
+                          "Go to the next poll")  "]")
+
+In control:
+
+(let ((poll-id (s:get-param 'id)))
+ ;; do stuff based on poll-id
+
+======================================================================
+3. Call an action on a specific page
+
+ (s:a 'href (s:link-to "polls" 'id (poll:poll 'get 'id) 
+			       'action "poll.edit")
+            "Suggest changes to this poll")
+
+ NOT TRUE! This calls fuction poll.edit (should be in control.scm). Parameter set is 'id to a poll num.
+
+======================================================================
+4. A complex link example
+
+(s:a "Reply" 'href (s:link-to (s:current-page) 
+	     'action "discussion.reply" 
+	     'reply_to (number->string (hash-table-ref row 'posts.id)) 
+	     'id (s:get "discussion.parent_object_id") ) "reply") "]"
+
+;; use (s:get-param to get the 'id, or 'reply_to values
+
+======================================================================
+5. Get and set a session var
+
+(s:session-var-get "keyname")
+(s:session-var-set! "keyname" "value")
