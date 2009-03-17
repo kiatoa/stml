@@ -208,7 +208,7 @@
 (load "mrwdbi.scm")
 (define db (dbi:open 'pg '((dbname   . "test")
 			   (user     . "matt")
-			   (password . "Rarotonga")
+			   (password . "Nada")
 			   (host     . "localhost"))))
 (dbi:exec db "CREATE TABLE foo(id SERIAL  PRIMARY KEY,name TEXT);")
 (dbi:exec db "INSERT INTO foo(name) VALUES(?);" "Matt")
