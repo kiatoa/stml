@@ -9,7 +9,14 @@
 
 include install.cfg
 
-install : $(TARGDIR)/stmlrun $(LOGDIR) $(SOFILES)
+MODULEFILES = $(wildcard modules/*/*-mod.scm)
+SOFILES     = $(MODULEFILES:%.scm=%.so)
+CFILES      = $(MODULEFILES:%.scm=%.c)
+OFILES      = $(MODULEFILES:%.scm=%.o)
+TARGFILES   = $(notdir $(SOFILES))
+MODULES     = $(addprefix $(TARGDIR)/modules/,$(TARGFILES))
+
+install : $(TARGDIR)/stmlrun $(LOGDIR) $(MODULES)
 
 stmlrun : stmlrun.scm formdat.scm  misc-stml.scm  session.scm stml.scm \
           setup.scm html-filter.scm requirements.scm dbi.scm keystore.scm \
@@ -21,6 +28,12 @@ $(TARGDIR)/stmlrun : stmlrun
 	cp stmlrun $(TARGDIR)
 	chmod a+rx $(TARGDIR)/stmlrun
 
+$(TARGDIR)/modules :
+	mkdir -p $(TARGDIR)/modules
+
+$(MODULES) : $(SOFILES) $(TARGDIR)/modules
+	cp $< $@
+
 # logging currently relies on this
 #
 $(LOGDIR) :
@@ -30,12 +43,21 @@ $(LOGDIR) :
 test: kiatoa.db
 	echo '(exit)'| csi -q  ./tests/test.scm 
 
-# cgi-util proplist cgi-util cookie
+# modules
+#
+%.so : %.scm
+	csc -I modules/* -s $<
 
-kiatoa.db: /tmp/sqlite3 sessions.sql
-	rm -f kiatoa.db
-	$(SQLITE3) kiatoa.db < sessions.sql
+all : $(SOFILES)
 
-/tmp/sqlite3: sqlite3.scm
-	csc sqlite3.scm -o /tmp/sqlite3
-
+# 
+# $(CFILES): build/%.c: ../scm/%.scm ../scm/macros.scm
+# 	chicken $< -output-file $@
+# 
+# 
+# $(OFILES): src/%.o: src/%.c
+# 	gcc -c $< `chicken-config -cflags` -o $@
+# 
+# $(src_code): %: src/%.o src/laedlib.o src/layobj.o
+# 	gcc src/$*.o src/laedlib.o src/layobj.o -o $* `chicken-config -libs`
+# 
