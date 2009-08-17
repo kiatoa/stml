@@ -48,6 +48,7 @@
 ;; Suggestion: order these alphabetically
 (define (s:a      . args) (s:common-tag "A"      args))
 (define (s:b      . args) (s:common-tag "B"      args))
+(define (s:u      . args) (s:common-tag "U"      args))
 (define (s:big    . args) (s:common-tag "BIG"    args))
 (define (s:body   . args) (s:common-tag "BODY"   args))
 (define (s:center . args) (s:common-tag "CENTER" args))
@@ -77,6 +78,7 @@
 (define (s:dl     . args) (s:common-tag "DL"     args))
 (define (s:dt     . args) (s:common-tag "DT"     args))
 (define (s:dd     . args) (s:common-tag "DD"     args))
+(define (s:pre    . args) (s:common-tag "PRE"    args))
 
 (define (s:dblquote  . args)
   (let* ((inputs (s:extract args))
@@ -106,6 +108,7 @@
 (define (s:fieldset legend . args)
   (list "<FIELDSET><LEGEND>" legend "<LEGEND>" args "</FIELDSET>"))
 
+;; USE 'page_override to override a linkto page from a button
 (define (s:form   . args)
   ;; create a link for calling back into the current page and calling a specified 
   ;; function
@@ -115,9 +118,16 @@
 		       (if i i #f)))
          (page       (let ((p (slot-ref s:session 'page)))
                        (if p p "home")))
-         (link       (session:link-to s:session page (if id
-							 (list 'action action 'id id)
-							 (list 'action action)))))
+	 ;; (link       (session:link-to s:session page (if id
+         ;;                                                 (list 'action action 'id id)
+         ;;                                                 (list 'action action)))))
+	 (link       (if (string=? (substring action 0 5) "http:") ;; if first part of string is http:
+	        	 action
+	        	 (session:link-to s:session 
+	        			  page 
+	        			  (if id
+	        			      (list 'action action 'id id)
+	        			      (list 'action action))))))
     ;; (script     (slot-ref s:session 'script))
     ;; (action-str (string-append script "/" page "?action=" action)))
     (s:common-tag "FORM" (append (s:remove-param-matching (s:remove-param-matching args 'action) 'id)

@@ -9,7 +9,7 @@
 ;;  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 ;;  PURPOSE.
 
-(use test)
+(use test md5)
 
 (load "./requirements.scm")
 (load "./dbi.scm")
@@ -82,7 +82,6 @@
 
 (test "Delete session" #t (s:delete-session))
 
-
 (let ((fh (open-input-pipe "ls ./tests/pages/*/control.scm")))
   (let loop ((l (read-line fh)))
     (if (not (eof-object? l))
@@ -109,3 +108,62 @@
 		 "</SELECT>"))
 
 (test "Select list" result (s:select select-list 'name "efg"))
+
+;; Test modules
+
+(test "misc:non-zero-string \"\"" #f (misc:non-zero-string ""))
+(test "misc:non-zero-string #f" #f (misc:non-zero-string #f))
+(test "misc:non-zero-string 'blah" #f (misc:non-zero-string 'blah))
+
+;; forms
+(define form #f)
+(test "make <formdat>" #t (let ((f (make <formdat>)))
+			    (set! form f)
+			    #t))
+(test "formdat: set!/get" "Yep!" (begin
+				   (formdat:set! form "blah" "Yep!")
+				   (formdat:get  form "blah")))
+
+;; The twiki module
+
+;; clean up
+(system "rm -rf twikis/*")
+(load "modules/twiki/twiki-mod.scm")
+(define keys (list "blah" 1 'nada))
+(test "twiki:keys->key"  "blah 1 nada" (twiki:keys->key keys))
+(define key (twiki:keys->key keys))
+
+(define *tdb* #f)
+(test "twiki:open-db"   #t (let ((db (twiki:open-db key)))
+			     (set! *tdb* db)
+			     (if *tdb* #t #f)))
+
+(test "twiki:dat->html" '("Hello" "<BR>") (twiki:dat->html "Hello"))
+(test "twiki:keys->fname" '("twikis/d99a2de9/6808493b/23770f70" "d99a2de96808493b23770f70c76dffe4")
+      (twiki:key->fname key))
+
+(test "twiki:key->wid"     1     (twiki:key->wid *tdb* key))
+(test "twiki:get-tiddlers-by-num" '() (twiki:get-tiddlers-by-num  *tdb* 0 (list 1 2 3)))
+(test "twiki:get-tiddlers-by-name" '() (twiki:get-tiddlers-by-name *tdb* 0 "MainMenu"))
+(test "twiki:get-tiddlers"  '()  (twiki:get-tiddlers *tdb* 0 (list "MainMenu")))
+(test "twiki:get-tiddlers"  '()  (twiki:get-tiddlers *tdb* 0 (list "MainMenu" "AnotherOne")))
+(test "twiki:wiki" "<TABLE>"     (car (twiki:wiki (list "blah" 1 'nada))))
+(test "twiki:view"  "<DIV class=\"node\">" (car (twiki:view "" (twiki:tiddler-make))))
+
+(test "s:td"              '("<TD>" (()) "</TD>") (s:td '()))
+;; (test "twiki:get-tiddlers-by-name" '() (twiki:get-tiddlers-by-name 1 "fred"))
+(test "twiki:tiddler-name->id" 1 (twiki:tiddler-name->id *tdb* "MainMenu"))
+(test "s:set! a var to #f"     ""
+      (begin (s:set! "BLAH" #f)
+	     (s:get "BLAH"))) ;; don't know if this one makes sense. Setting to #f should really delete the value
+(test "twiki:save-dat"           2        (twiki:save-dat *tdb* "dat" 0))
+(test "twiki:get-dat"            "dat"    (twiki:get-dat *tdb* 2))
+(test "twiki:get-dat"            #f       (twiki:get-dat *tdb* 5))
+;; (test "twiki:get-dat"      #f    (twiki:get-dat *tdb* #f))
+(test "twiki:save-tiddler"       #t       (twiki:save-tiddler *tdb* "heading" "body" "tags" key 0))
+(test "twiki:save-curr-tiddler"  #f       (twiki:save-curr-tiddler *tdb* 1))
+(test "twiki:edit-twiddler"      #t       (list? (twiki:edit-tiddler *tdb* key 0)))
+(test "twiki:maint_area"         "<DIV>"  (car (twiki:maint_area *tdb* 1 key)))
+(test "twiki:pic_mgmt"           "<DIV>"  (car (twiki:pic_mgmt *tdb* 1 key)))
+(test "twiki:save-pic"           #t       (twiki:save-pic *tdb* (list "mypic.jpg" "image/jpeg" (string->blob "testing eh!")))) 
+(test "twiki:save-pic-from-form" #f       (twiki:save-pic-from-form *tdb* 1))

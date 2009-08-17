@@ -2,4 +2,6 @@ format_version "1"
 
 new_manifest [0000000000000000000000000000000000000002]
 
-old_revision [63d8b4b4a3015f33e70832b32f4d38d268f14f0c]
+old_revision [938715afb35848cdb20f7270a5d3c80e44a41646]
+
+delete "kiatoa.db"

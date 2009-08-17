@@ -34,6 +34,8 @@
    toppage      ;; defaults to "index" - override in .stml.config if desired
    page         ;; the page name - defaults to home
    curr-page    ;; the current page being evaluated
+   content-type ;; the default content type is text/html, override to deliver other stuff
+   page-type    ;; use in conjunction with content-type to deliver other payloads
    sroot
    pagedat
    pagevars     ;; session vars specific to this page
@@ -57,6 +59,8 @@
   (slot-set! self 'dbtype      'pg)
   (slot-set! self 'page        "home")        ;; these are defaults
   (slot-set! self 'curr-page   "home")
+  (slot-set! self 'content-type "Content-type: text/html; charset=iso-8859-1\n\n")
+  (slot-set! self 'page-type   'html)
   (slot-set! self 'toppage     "index")
   (slot-set! self 'params      '())           ;;
   (slot-set! self 'path-params '())
@@ -535,7 +539,7 @@
 
 (define-method (session:pp-formdat (self <session>))
   (let ((dat (formdat:all->strings (slot-ref self 'formdat))))
-    (string-join dat "<br> ")))
+    (string-intersperse dat "<br> ")))
 
 (define (session:param->string params)
   ;; (err:log "params=" params)
@@ -565,7 +569,7 @@
     (string-append "http://" server "/" script "/" page "?" paramstr))) ;; "/sn=" session-key)))
 
 (define-method (session:cgi-out (self <session>))
-  (let* ((content '("Content-type: text/html; charset=iso-8859-1\n\n"))
+  (let* ((content  (list (slot-ref self 'content-type))) ;; '("Content-type: text/html; charset=iso-8859-1\n\n"))
 	 (header   (let ((cookie (slot-ref self 'session-cookie)))
 		     (if cookie
 			 (cons (string-append "Set-Cookie: " (car cookie))
@@ -587,17 +591,9 @@
 
 ;; This one will get the first value found regardless of form
 (define-method (session:get-input (self <session>) key)
-  (let* ((forms-hash (slot-ref self 'formdat))
-	 (forms (hash-table-keys forms-hash)))
-    (if (null? forms) #f
-	(let loop ((form-name (car forms))
-		   (tail (cdr forms)))
-	  ;; (err:log "Looking for key " key " in form " form-name)
-	  (let* ((form (hash-table-ref forms-hash form-name))
-		 (res (formdat:get form key)))
-	    (if res res ;; (begin (err:log "Got result: " res) res)
-		(if (null? tail) res ;; (begin (err:log "No result found: " res) res)
-		    (loop (car tail)(cdr tail)))))))))
+  (let* ((formdat (slot-ref self 'formdat)))
+    (if (not formdat) #f
+	(formdat:get formdat key))))
 
 (define-method (session:run-actions (self <session>))
   (let* ((action    (session:get-param self 'action))
@@ -633,3 +629,9 @@
 (define-method (session:set-called! (self <session>) page)
   (slot-set! self 'seen-pages (cons page (slot-ref self 'seen-pages))))
 
+;;======================================================================
+;; Alternative data type delivery
+;;======================================================================
+
+(define-method (session:alt-out (self <session>))
+  '())

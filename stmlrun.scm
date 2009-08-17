@@ -38,7 +38,9 @@
            (append (slot-ref s:session 'pagedat)
                    (s:call (slot-ref s:session 'toppage))))
 
-(session:cgi-out s:session)
+(if (eq? (slot-ref s:session 'page-type) 'html) ;; default is html. 
+    (session:cgi-out s:session)
+    (session:alt-out s:session))
 
 (session:save-vars s:session)
 

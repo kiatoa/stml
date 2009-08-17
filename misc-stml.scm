@@ -47,8 +47,8 @@
 
 (define (s:lazy->num num)
   (if (number? num) num
-      (if (string? num) (string->number num)
-	  (if num 1 0)))) ;; wierd eh! yep, #f=>0 #t=>1
+      (if (string->number num) (string->number num)
+	    (if num 1 0)))) ;; wierd eh! yep, #f=>0 #t=>1 
 
 ;;======================================================================
 ;; D B
@@ -129,7 +129,8 @@
 (define (s:crypt-passwd pw s)
   (let* ((salt (if s s (session:make-rand-string 2)))
 	 (inp (open-input-pipe 
-              (string-append "echo " pw " | mkpasswd -S " salt " -s")))
+               ;;(string-append "echo " pw " | mkpasswd -S " salt " -s")))
+	       (conc "mkpasswd " pw " " salt)))
          (res (read-line inp)))
     (close-input-port inp)
     res))
