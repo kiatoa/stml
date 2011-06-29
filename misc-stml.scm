@@ -195,7 +195,23 @@
   (cond
    ((number? val)  val)
    ((string? val)  (string->number val))
+   ((symbol? val)  (string->number (symbol->string val)))
    (else     #f)))
+
+;; NB// this is *illegal* pgint
+(define (s:illegal-pgint val)
+  (cond
+   ((> val 2147483647) 1)
+   ((< val -2147483648) -1)
+   (else #f)))
+
+(define (s:any->pgint val)
+  (let ((n (s:any->number val)))
+    (if n
+	(if (s:illegal-pgint n)
+	    #f
+	    n)
+	n)))
 
 ;; string is a string and non-zero length
 (define (misc:non-zero-string str)

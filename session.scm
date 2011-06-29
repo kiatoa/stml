@@ -37,7 +37,9 @@
    content-type ;; the default content type is text/html, override to deliver other stuff
    page-type    ;; use in conjunction with content-type to deliver other payloads
    sroot
+   twikidir     ;; location for twikis - needs to be fully writable by web server
    pagedat
+   alt-page-dat
    pagevars     ;; session vars specific to this page
    pagevars-before
    sessionvars  ;; session vars visible to all pages
@@ -51,7 +53,9 @@
    curr-err
    log-port
    logfile
-   seen-pages))
+   seen-pages
+   page-dir-style  ;; #t = new style, #f = old style
+   debugmode))
 
 ;; SPLIT INTO STRAIGHT FORWARD INIT AND COMPLEX INIT
 (define-method (initialize (self <session>) initargs)
@@ -66,11 +70,15 @@
   (slot-set! self 'path-params '())
   (slot-set! self 'session-key #f)
   (slot-set! self 'pagedat     '())
+  (slot-set! self 'alt-page-dat #f)
   (slot-set! self 'sroot       "./")
   (slot-set! self 'session-cookie #f)
   (slot-set! self 'curr-err #f)
   (slot-set! self 'log-port (current-error-port))
   (slot-set! self 'seen-pages '())
+  (slot-set! self 'page-dir-style #t) ;; #t : pages/<pagename>_(view|cntl).scm
+                                      ;; #f : pages/<pagename>/(view|control).scm 
+  (slot-set! self 'debugmode #f)
   (for-each (lambda (slot-name)
               (slot-set! self slot-name (make-hash-table)))
             (list 'pagevars 'sessionvars 'globalvars 'pagevars-before 
@@ -112,9 +120,9 @@
     (for-each 
      (lambda (stmt)
        (dbi:exec conn stmt))
-     (list "CREATE TABLE session_vars (id integer PRIMARY KEY,session_id integer,page text,key text,value text);"
-	   "CREATE TABLE sessions (id integer PRIMARY KEY,session_key text);"
-           "CREATE TABLE metadata (id integer PRIMARY KEY,key TEXT,value TEXT);"))))
+     (list "CREATE TABLE session_vars (id INTEGER PRIMARY KEY,session_id INTEGER,page TEXT,key TEXT,value TEXT);"
+	   "CREATE TABLE sessions (id INTEGER PRIMARY KEY,session_key TEXT,last_used TIMESTAMP);"
+           "CREATE TABLE metadata (id INTEGER PRIMARY KEY,key TEXT,value TEXT);"))))
 ;;  ;; if we have a session_key look up the session-id and store it
 ;;  (slot-set! self 'session-id (session:get-id self)))
 
@@ -154,6 +162,7 @@
 	 (lambda (tuple)
 	   (set! result (vector-ref tuple 0)))
 	 conn query)
+	(if result (dbi:exec conn (conc "UPDATE sessions SET last_used=" (dbi:now conn) " WHERE session_key=?;") session-key))
         result)
       #f))
 
@@ -208,18 +217,34 @@
 ;;
 (define-method (session:delete-session (self <session>) session-key)
   (let ((session-id (session:get-session-id self session-key))
-        (queries    (list "DELETE FROM session_vars WHERE session_id=?;"
-                          "DELETE FROM sessions WHERE id=?;"))
+        (qry        (conc "BEGIN;"
+			  "DELETE FROM session_vars WHERE session_id=?;"
+                          "DELETE FROM sessions WHERE id=?;"
+			  "COMMIT;"))
         (conn              (slot-ref self 'conn)))
     (if session-id
         (begin
-          (for-each
-           (lambda (query)
-             (dbi:exec conn query session-id))
-	   queries)
+          (dbi:exec conn qry session-id session-id)
 	  (initialize self '())
 	  (session:setup self)))
     (not (session:get-session-id self session-key))))
+
+;; (define-method (session:delete-session (self <session>) session-key)
+;;   (let ((session-id (session:get-session-id self session-key))
+;;         (queries    (list "BEGIN;"
+;; 			  "DELETE FROM session_vars WHERE session_id=?;"
+;;                           "DELETE FROM sessions WHERE id=?;"
+;; 			  "COMMIT;"))
+;;         (conn              (slot-ref self 'conn)))
+;;     (if session-id
+;;         (begin
+;;           (for-each
+;;            (lambda (query)
+;;              (dbi:exec conn query session-id))
+;; 	   queries)
+;; 	  (initialize self '())
+;; 	  (session:setup self)))
+;;     (not (session:get-session-id self session-key))))
 
 (define-method (session:extract-key (self <session>) key)
   (let ((params (slot-ref self 'params)))
@@ -470,17 +495,31 @@
 	  res
 	  (loop (read-line p)(append res (list hed)))))))
 
+;; May 2011, putting all pages into one directory for the following reasons:
+;;   1. want filename to reflect page name (emacs limitation)
+;;   2. that's it! no other reason. could make it configurable ...
 (define-method (session:call-parts (self <session>) page parts)
   (slot-set! self 'curr-page page)
-  (let* ((dir     (string-append (slot-ref self 'sroot) "/pages/" page))
-	 (control (string-append dir "/control.scm"))
-	 (view    (string-append dir "/view.scm"))
+  ;; (session:log self "page-dir-style: " (slot-ref self 'page-dir-style))
+  (let* ((dir-style ;; (equal? (slot-ref self 'page-dir-style) "onedir")) ;; flag #t for onedir, #f for old style
+	  (slot-ref self 'page-dir-style))
+	 (dir     (string-append (slot-ref self 'sroot) 
+				 (if dir-style 
+				     (conc "/pages/")
+				     (conc "/pages/" page))))
+	 (control (string-append dir (if dir-style 
+					 (conc page "_ctrl.scm")
+					 "/control.scm")))
+	 (view    (string-append dir (if dir-style 
+					 (conc page "_view.scm")
+					 "/view.scm")))
 	 (load-view    (and (file-exists? view)
 			    (or (eq? parts 'both)(eq? parts 'view))))
 	 (load-control (and (file-exists? control)
 			    (or (eq? parts 'both)(eq? parts 'control))))
-	 (view-dat   '())
-	 (sugar "/home/matt/kiatoa/stml/sugar.scm" ))
+	 (view-dat   '()))
+    ;; (session:log self "dir-style: " dir-style)
+ ;;   (sugar "/home/matt/kiatoa/stml/sugar.scm" ))
     ;; (print "dir=" dir " control=" control " view=" view " load-view=" load-view " load=control=" load-control)
     (if load-control
 	(begin
@@ -593,7 +632,13 @@
 (define-method (session:get-input (self <session>) key)
   (let* ((formdat (slot-ref self 'formdat)))
     (if (not formdat) #f
-	(formdat:get formdat key))))
+	(if (or (string? key)(number? key)(symbol? key))
+	    (if (eq? (class-of formdat) <formdat>)
+		(formdat:get formdat key)
+		(begin
+		  (session:log self "ERROR: formdat: " formdat " is not of class <formdat>")
+		  #f))
+	    (session:log self "ERROR: bad key " key)))))
 
 (define-method (session:run-actions (self <session>))
   (let* ((action    (session:get-param self 'action))
@@ -634,4 +679,16 @@
 ;;======================================================================
 
 (define-method (session:alt-out (self <session>))
-  '())
+  (let ((dat (slot-ref self 'alt-page-dat)))
+    ;; (s:log "dat is: " dat)
+    ;; (print "HTTP/1.1 200 OK")
+    (print "Date: " (time->string (seconds->utc-time (current-seconds))))
+    (print "Content-Type: " (slot-ref self 'content-type))
+    (print "Accept-Ranges: bytes")
+    (print "Content-Length: " (if (blob? dat)
+				  (blob-size dat)
+				  0))
+    (print "Keep-Alive: timeout=15, max=100")
+    (print "Connection: Keep-Alive")
+    (print "")
+    (write-string (blob->string dat) #f (current-output-port))))

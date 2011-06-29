@@ -81,6 +81,9 @@
      (session:del! s:session "*sessionvars*" key)
      val))
 
+(define (s:session-var-del! key)
+  (session:del! s:session "*sessionvars*" key))
+
 ;;
 (define (s:get-input key)
   (session:get-input s:session key))

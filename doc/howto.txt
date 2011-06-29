@@ -1,3 +1,15 @@
+Gotchas!
+=======
+
+1. All items for a page *must* be part of a list!
+
+   OK:     (list (function1 param1)(function2 param2))
+   NOT OK: (begin (function1 param1)(function2 param2))
+
+
+Various components
+==================
+
 ======================================================================
 1. Create a link.
 
@@ -7,6 +19,8 @@
 ======================================================================
 2. Call current page with new param
 
+In view.scm:
+
  (s:center "[" (s:a 'href (s:link-to "polls"
                            'id
                             (begin
@@ -14,7 +28,7 @@
                               (poll:poll 'get-next-poll)))
                           "Go to the next poll")  "]")
 
-In control:
+In control.scm:
 
 (let ((poll-id (s:get-param 'id)))
  ;; do stuff based on poll-id
@@ -32,9 +46,9 @@ In control:
 4. A complex link example
 
 (s:a "Reply" 'href (s:link-to (s:current-page) 
-	     'action "discussion.reply" 
-	     'reply_to (number->string (hash-table-ref row 'posts.id)) 
-	     'id (s:get "discussion.parent_object_id") ) "reply") "]"
+	           'action "discussion.reply" ;; <page>.<action>
+	           'reply_to (number->string (hash-table-ref row 'posts.id)) 
+	           'id (s:get "discussion.parent_object_id")) "reply")
 
 ;; use (s:get-param to get the 'id, or 'reply_to values
 
@@ -43,3 +57,63 @@ In control:
 
 (s:session-var-get "keyname")
 (s:session-var-set! "keyname" "value")
+
+5.1 Page local vars
+
+(s:set! key val)
+(s:get key)
+
+======================================================================
+6. make a selection drop down
+
+In view.scm: 
+
+(s:select '(("World" 0)("Country" 1)("State" 2)("Town/City" 3)) 'name 'scope)
+
+In control.scm:
+
+(let ((scope (s:get-input 'scope)))
+  ....
+
+======================================================================
+7. Simple error reporting
+
+In control.scm:
+(s:set-err "You must provide an email address")
+
+In view.scm:
+(s:get-err s:err-font)
+
+Or:
+(s:get-err (lambda (x)(s:err-font x (s:br))))
+
+======================================================================
+8. Misc useful stuff
+
+  i. Lazy/safe string->number 
+
+(s:any->number val)
+
+  ii. Random string
+
+(session:make-rand-string len)
+
+ iii. string to number for pgint
+ 
+(s:any->pgint val)
+
+======================================================================
+9. Forms and input
+
+(s:form 'action "login.login" 'method "post"
+   (s:input-preserve 'type "text" 'name "email-address" 'size "16" 'maxlength "30")
+   (s:input 'type "submit"   'name "form-name" 'value "login"))
+
+(s:get-input 'email-address)
+
+To preserve the input simply do a set of the value on the 'name field:
+(s:set! "email-address" "matt@kiatoa.com")
+
+======================================================================
+10. 
+

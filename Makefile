@@ -19,7 +19,7 @@ MODULES     = $(addprefix $(TARGDIR)/modules/,$(TARGFILES))
 install : $(TARGDIR)/stmlrun $(LOGDIR) $(MODULES)
 
 stmlrun : stmlrun.scm formdat.scm  misc-stml.scm  session.scm stml.scm \
-          setup.scm html-filter.scm requirements.scm dbi.scm keystore.scm \
+          setup.scm html-filter.scm requirements.scm keystore.scm \
           sugar.scm
 	csc stmlrun.scm
 
@@ -50,6 +50,11 @@ test: kiatoa.db
 
 all : $(SOFILES)
 
+dbi.so : dbi.scm
+	csc -i dbi.scm
+
+installdbi : dbi.so
+	cp dbi.so /usr/local/lib/chicken/3/
 # 
 # $(CFILES): build/%.c: ../scm/%.scm ../scm/macros.scm
 # 	chicken $< -output-file $@

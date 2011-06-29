@@ -12,12 +12,14 @@
 ;; (require-extension syntax-case)
 (declare (run-time-macros))
 
+(use dbi)
+
 (include "requirements.scm")
 (include "html-filter.scm")
 (include "misc-stml.scm")
 (include "formdat.scm")
 (include "stml.scm")
-(include "dbi.scm")
+;; (include "dbi.scm")
 (include "session.scm")
 (include "setup.scm") ;; s:session gets created here
 (include "sqltbl.scm")

@@ -9,10 +9,9 @@
 ;;  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 ;;  PURPOSE.
 
-(use test md5)
+(use test md5 dbi)
 
 (load "./requirements.scm")
-(load "./dbi.scm")
 (load "./misc-stml.scm")
 (load "./formdat.scm")
 (load "./stml.scm")
@@ -124,6 +123,11 @@
 				   (formdat:set! form "blah" "Yep!")
 				   (formdat:get  form "blah")))
 
+(test "s:string->pgint"   123 (s:any->pgint "123"))
+(test "s:illegal-pgint (legal)"        #f (s:illegal-pgint 1011))
+(test "s:illegal-pgint (illegal big)"   1 (s:illegal-pgint  9999999999))
+(test "s:illegalpgint (illegal small)" -1 (s:illegal-pgint -9999999999))
+
 ;; The twiki module
 
 ;; clean up
@@ -137,18 +141,22 @@
 (test "twiki:open-db"   #t (let ((db (twiki:open-db key)))
 			     (set! *tdb* db)
 			     (if *tdb* #t #f)))
+(define wiki (make-twiki:wiki))
+(twiki:wiki-set-wid! wiki 1)
+(twiki:wiki-set-name! wiki "main")
+(twiki:wiki-set-perms! wiki '(r w))
 
-(test "twiki:dat->html" '("Hello" "<BR>") (twiki:dat->html "Hello"))
-(test "twiki:keys->fname" '("twikis/d99a2de9/6808493b/23770f70" "d99a2de96808493b23770f70c76dffe4")
+(test "twiki:dat->html" '("Hello" "<BR>") (twiki:dat->html "Hello" wiki))
+(test "twiki:keys->fname" '("twikis/Ymxha/CAxIG/5hZGE" "YmxhaCAxIG5hZGE_") ;; ("twikis/d99a2de9/6808493b/23770f70" "d99a2de96808493b23770f70c76dffe4")
       (twiki:key->fname key))
 
-(test "twiki:key->wid"     1     (twiki:key->wid *tdb* key))
+(test "twiki:name->wid"     1     (twiki:name->wid *tdb* "main"))
 (test "twiki:get-tiddlers-by-num" '() (twiki:get-tiddlers-by-num  *tdb* 0 (list 1 2 3)))
 (test "twiki:get-tiddlers-by-name" '() (twiki:get-tiddlers-by-name *tdb* 0 "MainMenu"))
 (test "twiki:get-tiddlers"  '()  (twiki:get-tiddlers *tdb* 0 (list "MainMenu")))
 (test "twiki:get-tiddlers"  '()  (twiki:get-tiddlers *tdb* 0 (list "MainMenu" "AnotherOne")))
-(test "twiki:wiki" "<TABLE>"     (car (twiki:wiki (list "blah" 1 'nada))))
-(test "twiki:view"  "<DIV class=\"node\">" (car (twiki:view "" (twiki:tiddler-make))))
+(test "twiki:wiki" "<TABLE>"     (car (twiki:wiki "main" (list "blah" 1 'nada))))
+(test "twiki:view"  "<DIV class=\"node\">" (car (twiki:view "" "" 0 (twiki:tiddler-make) wiki)))
 
 (test "s:td"              '("<TD>" (()) "</TD>") (s:td '()))
 ;; (test "twiki:get-tiddlers-by-name" '() (twiki:get-tiddlers-by-name 1 "fred"))
@@ -161,9 +169,49 @@
 (test "twiki:get-dat"            #f       (twiki:get-dat *tdb* 5))
 ;; (test "twiki:get-dat"      #f    (twiki:get-dat *tdb* #f))
 (test "twiki:save-tiddler"       #t       (twiki:save-tiddler *tdb* "heading" "body" "tags" key 0))
-(test "twiki:save-curr-tiddler"  #f       (twiki:save-curr-tiddler *tdb* 1))
-(test "twiki:edit-twiddler"      #t       (list? (twiki:edit-tiddler *tdb* key 0)))
-(test "twiki:maint_area"         "<DIV>"  (car (twiki:maint_area *tdb* 1 key)))
+;; (test "twiki:save-curr-tiddler"  #f       (twiki:save-curr-tiddler *tdb* 1))
+(test "twiki:edit-twiddler"      #t       (list? (twiki:edit-tiddler *tdb* key 0 0)))
+(test "twiki:maint_area"         "<DIV>"  (car (twiki:maint_area *tdb* 1 key wiki)))
 (test "twiki:pic_mgmt"           "<DIV>"  (car (twiki:pic_mgmt *tdb* 1 key)))
-(test "twiki:save-pic"           #t       (twiki:save-pic *tdb* (list "mypic.jpg" "image/jpeg" (string->blob "testing eh!")))) 
-(test "twiki:save-pic-from-form" #f       (twiki:save-pic-from-form *tdb* 1))
+
+;; get a blob jpg to process
+(define inp2 (open-input-file "tests/kiatoa.png"))
+(define dat  (string->blob (read-string #f inp2)))
+(close-input-port inp2)
+
+
+(test "twiki:save-pic"           #t       (twiki:save-pic *tdb* (list "mypic.jpg" "image/jpeg" dat) 0)) ;; (string->blob "testing eh!")))) 
+;; (test "twiki:save-pic-from-form" #f       (twiki:save-pic-from-form *tdb* 1))
+
+;; more tests on dats
+
+(define dat #f)
+(let ((inp (open-input-file "tests/kiatoa.png")))
+  (set! dat (read-string #f inp))
+  (close-input-port inp))
+(use md5)
+(define dat-md5 (md5:digest dat))
+(test "twiki:save-dat (binary)" 4        (twiki:save-dat *tdb* dat 1))
+(test "twiki:get-dat (binary)"  dat-md5  (let ((d (twiki:get-dat *tdb* 4)))
+					   (md5:digest d)))
+;; forms
+;; (define inp (open-input-file "tests/example.post.in"))
+;; (define dat (read-string #f inp))
+;; (define datstr (open-input-string dat))
+
+;; binary inputs
+(define inp (open-input-file "tests/example.post.binary.in"))
+(define dat #f)
+
+(test "formdat:load-all-port multipart" #t (let ((idat (formdat:load-all-port inp)))
+				   (set! dat idat)
+				   #t))
+(test "formdat:keys" '(picture-name input-picture "" submit-picture) (formdat:keys dat))
+
+(define inp (open-input-file "tests/example.post.in"))
+(test "formdat:load-all-port single part" #t (let ((idat (formdat:load-all-port inp)))
+				   (set! dat idat)
+				   #t))
+(test "formdat:keys" '(email-address form-name password) (formdat:keys dat))
+
+(close-input-port inp)

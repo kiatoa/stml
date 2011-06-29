@@ -33,8 +33,13 @@
                 (list data new-params)
                 (loop data new-params (car new-tail)(cdr new-tail)))))
          (else
-          (s:log "WARNING: Malformed input, you have broken stml, probably in a form: head=" head " tail=" tail " inlst=" inlst " params=" params)
-          (list data params))))))
+          (s:log "WARNING: Malformed input, you have broken stml, probably in a form: head=" head 
+	          "\ntail=" tail 
+                  "\ninlst=" inlst 
+                  "\nparams=" params)
+	  (if (null? tail)
+	      (list data params)
+	      (loop data params (car tail)(cdr tail))))))))
 
 ;; most tags can be handled by this routine
 (define (s:common-tag tagname args)
@@ -79,6 +84,7 @@
 (define (s:dt     . args) (s:common-tag "DT"     args))
 (define (s:dd     . args) (s:common-tag "DD"     args))
 (define (s:pre    . args) (s:common-tag "PRE"    args))
+(define (s:span   . args) (s:common-tag "SPAN"   args))
 
 (define (s:dblquote  . args)
   (let* ((inputs (s:extract args))
@@ -106,7 +112,13 @@
 
 ;; puts a nice box around a chunk of stuff
 (define (s:fieldset legend . args)
-  (list "<FIELDSET><LEGEND>" legend "<LEGEND>" args "</FIELDSET>"))
+  (list "<FIELDSET><LEGEND>" legend "</LEGEND>" args "</FIELDSET>"))
+
+;; given a string return the string if it is non-white space or &nbsp; otherwise
+(define (s:nbsp str)
+  (if (string-match "^\\s*$" str)
+      "&nbsp;"
+      str))
 
 ;; USE 'page_override to override a linkto page from a button
 (define (s:form   . args)
@@ -222,7 +234,8 @@
           ((list? x)
            (s:print (+ indent 1) x))
           (else
-           (print "ERROR: Bad input 01"))))
+           ;; (print "ERROR: Bad input 01") ;; why do anything with junk?
+           )))
        inlst))
 
 (define (s:cgi-out inlst)
@@ -231,12 +244,15 @@
 (define (s:output port inlst)
   (map (lambda (x)
 	 (cond 
-	  ((string? x) (print x))
-	  ((symbol? x) (print x))
+	  ((string? x) (print x)) ;; (print x))
+	  ((symbol? x) (print x)) ;; (print x))
 	  ((list? x)   (s:output port x))
 	  (else
-	   (print "ERROR: Bad input 02"))))
+	   ;; (print "ERROR: Bad input 02") ;; why do anything? don't output junk.
+	   )))
        inlst))
+;  (if (> (length inlst) 2)
+;      (print)))
 
 (define (s:output-new port inlst)
   (with-output-to-port port
@@ -247,6 +263,7 @@
 		((symbol? x) (print x))
 		((list? x)   (s:output port x))
 		(else
-		 (print "ERROR: Bad input 03"))))
+		 ;; (print "ERROR: Bad input 03")
+     )))
 	     inlst))))
            
