@@ -1,5 +1,3 @@
-#!/usr/local/bin/csi -q
-
 ;; Copyright 2007-2011, Matthew Welland.
 ;; 
 ;;  This program is made available under the GNU GPL version 2.0 or
@@ -12,7 +10,5 @@
 ;; (require-extension syntax-case)
 ;; (declare (run-time-macros))
 
-;; (include "stmlcommon.scm")
-(require-library stml)
+(include "stmlcommon.scm")
 
-(stml:main #f)

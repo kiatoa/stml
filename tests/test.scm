@@ -9,9 +9,15 @@
 ;;  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 ;;  PURPOSE.
 
-(use test md5 dbi)
+(use test md5)
+
+(require-extension sqlite3)
+(import (prefix sqlite3 sqlite3:))
+
+(require-library dbi)
 
 (load "./requirements.scm")
+(load "./cookie.scm")
 (load "./misc-stml.scm")
 (load "./formdat.scm")
 (load "./stml.scm")
@@ -77,7 +83,7 @@
 
 (load "./tests/models/test.scm")
 
-(print "Session key is " (slot-ref s:session 'session-key))
+(print "Session key is " (sdat-get-session-key s:session))
 
 (test "Delete session" #t (s:delete-session))
 
@@ -116,7 +122,7 @@
 
 ;; forms
 (define form #f)
-(test "make <formdat>" #t (let ((f (make <formdat>)))
+(test "make <formdat>" #t (let ((f (make-formdat:formdat)))
 			    (set! form f)
 			    #t))
 (test "formdat: set!/get" "Yep!" (begin

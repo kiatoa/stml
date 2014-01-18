@@ -1,4 +1,4 @@
-;; Copyright 2007-2008, Matthew Welland.
+;; Copyright 2007-2011, Matthew Welland.
 ;; 
 ;;  This program is made available under the GNU GPL version 2.0 or
 ;;  greater. See the accompanying file COPYING for details.
@@ -8,6 +8,10 @@
 ;;  PURPOSE.
 
 ;; stml is a list of html strings
+
+(declare (unit stml))
+(declare (uses misc-stml))
+(require-extension regex)
 
 ;; extract various tokens from the parameter list
 ;;   'key val => put in the params list
@@ -33,10 +37,10 @@
                 (list data new-params)
                 (loop data new-params (car new-tail)(cdr new-tail)))))
          (else
-          (s:log "WARNING: Malformed input, you have broken stml, probably in a form: head=" head 
-	          "\ntail=" tail 
-                  "\ninlst=" inlst 
-                  "\nparams=" params)
+          (s:log "WARNING: Malformed input, you have broken stml, remember that all stml calls should return a result (null list or empty string is ok):\n  head=" head 
+	          "\n  tail=" tail 
+                  "\n  inlst=" inlst 
+                  "\n  params=" params)
 	  (if (null? tail)
 	      (list data params)
 	      (loop data params (car tail)(cdr tail))))))))
@@ -62,6 +66,8 @@
 (define (s:h1     . args) (s:common-tag "H1"     args))
 (define (s:h2     . args) (s:common-tag "H2"     args))
 (define (s:h3     . args) (s:common-tag "H3"     args))
+(define (s:h4     . args) (s:common-tag "H4"     args))
+(define (s:h5     . args) (s:common-tag "H5"     args))
 (define (s:head   . args) (s:common-tag "HEAD"   args))
 (define (s:html   . args) (s:common-tag "HTML"   args))
 (define (s:i      . args) (s:common-tag "I"      args))
@@ -85,6 +91,7 @@
 (define (s:dd     . args) (s:common-tag "DD"     args))
 (define (s:pre    . args) (s:common-tag "PRE"    args))
 (define (s:span   . args) (s:common-tag "SPAN"   args))
+(define (s:label  . args) (s:common-tag "LABEL"  args))
 
 (define (s:dblquote  . args)
   (let* ((inputs (s:extract args))
@@ -128,7 +135,7 @@
                        (if v v "default")))
 	 (id         (let ((i (s:find-param 'id args)))
 		       (if i i #f)))
-         (page       (let ((p (slot-ref s:session 'page)))
+         (page       (let ((p (sdat-get-page s:session)))
                        (if p p "home")))
 	 ;; (link       (session:link-to s:session page (if id
          ;;                                                 (list 'action action 'id id)

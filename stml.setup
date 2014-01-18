@@ -1,18 +1,18 @@
-#!/usr/local/bin/csi -q
-
-;; Copyright 2007-2011, Matthew Welland.
-;; 
+;; Copyright 2007-2010, Matthew Welland.
+;;
 ;;  This program is made available under the GNU GPL version 2.0 or
 ;;  greater. See the accompanying file COPYING for details.
-;; 
+;;
 ;;  This program is distributed WITHOUT ANY WARRANTY; without even the
 ;;  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 ;;  PURPOSE.
 
-;; (require-extension syntax-case)
-;; (declare (run-time-macros))
+;;;; margs.setup
 
-;; (include "stmlcommon.scm")
-(require-library stml)
+;; compile the code into a dynamically loadable shared object
+;; (will generate margs.so)
+;; (compile -s margs.scm)
 
-(stml:main #f)
+;; Install as extension library
+(install-extension 'stml "stml.so")
+

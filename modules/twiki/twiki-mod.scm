@@ -8,7 +8,8 @@
 ;;  PURPOSE.
 
 ;; twiki module
-(require-extension sqlite3 regex posix md5 base64)
+(require-extension sqlite3 regex posix md5 message-digest base64)
+(import (prefix base64 base64:))
 
 ;; TODO
 ;;
@@ -20,16 +21,27 @@
 ;;  (twiki:access keys wiki-name user-id)
 ;; search the code for "override" for more.
 
+;; twiki css
+;; =========
+;; Block                tag
+;; -----                ---
+;; twiki                twiki
+;; twiki body div       twiki-node
+;; twiki main menu      twiki-main-menu
+
 ;; This is the currently supported mechanism. Postgres will be added later -mrw- 7/26/2009
 ;;
 (define (twiki:open-db key . create-not-ok)
   ;; (s:log "Got to twiki:open-db with key: " key)
   (let* ((create-ok (if (null? create-not-ok) #t (car create-not-ok)))
 	 (fdat      (twiki:key->fname key))
-	 (basepath  (slot-ref s:session 'twikidir))
+	 (basepath  (sdat-get-twikidir s:session))
 	 (fpath     (car fdat))
 	 (fname     (cadr fdat))
-	 (fullname  (conc basepath "/" fpath "/" fname))
+	 (fulldir   (conc basepath "/" fpath))
+	 (fullname  (let ((fn (conc fulldir "/" fname)))
+		      (if (sdat-get-debugmode s:session)(s:log "\ntwikipath: " fn))
+		      fn))
 	 (fexists   (file-exists? fullname))
 	 (db        (if fexists (dbi:open 'sqlite3 (list (cons 'dbname fullname))) #f)))
     (if (and (not db)
@@ -39,8 +51,13 @@
 	  (if (not fexists)
 	      (begin
 		;; (print "fullname: " fullname)
+		(if (sdat-get-debugmode s:session)
+		    (s:log "\ncreating fulldir: " fulldir))
 		(twiki:register-wiki key fullname)
-		(system (conc "mkdir -p " fpath)) ;; create the path
+		(system (conc "mkdir -p " fulldir)) ;; create the path
+		(if (file-exists? fpath)
+		    (s:log "OK: dir " fpath " has been made")
+		    (s:log "ERROR: Failed to make the path for the twiki"))
 		(set! db (dbi:open 'sqlite3 (list (cons 'dbname fullname))))
 		(for-each 
 		 (lambda (sqry)
@@ -69,7 +86,7 @@
 		  (conc "INSERT INTO wikis (id,name,created_on) VALUES (1,'main'," (current-seconds) ");")))
 		;;     (conc "INSERT INTO tiddlers (wiki_id,name,created_on) VALUES(1,'MainMenu'," (current-seconds) ");")))))
 		(twiki:save-tiddler db "MainMenu" "[[FirstTiddler]]" "" 1 1)))
-	  (sqlite3:set-busy-timeout!(dbi:db-conn db) 1000000)
+	  ;; (sqlite3:set-busy-timeout!(dbi:db-conn db) 1000000)
 	  db))))
 
 ;;======================================================================
@@ -89,11 +106,11 @@
 	 (p1         (substring keypath 0           delta)) ;;  0  8))
 	 (p2         (substring keypath delta       (* delta 2)));;  8 16))
 	 (p3         (substring keypath (* delta 2) (* delta 3)))) ;; 16 24))
-    (list (string-intersperse (list "twikis" p1 p2 p3) "/") keypath)))
+    (list (string-intersperse (list "dbs" p1 p2 p3) "/") keypath)))
 
 ;; look up the wid based on the keys, this is used for sub wikis only. I.e. a wiki instantiated inside another wiki 
 ;; giving a separate namespace to all the tiddlers
-(define (twiki:name->wid db name) ;; (slot-ref s:session 'conn)
+(define (twiki:name->wid db name) 
   (let ((wid (dbi:get-one db "SELECT id FROM wikis WHERE name=?;" name)))
     (if wid wid
 	(begin
@@ -167,10 +184,13 @@ Upload the picture using the \"Pic\" link first")))))
 ;; these can be overridden by end user (just create a new routine by the same name)
 
 (define (twiki:open-registry)
-  (let* ((basepath  (slot-ref s:session 'sroot))
-	 (regfile   (conc basepath "/twikis/registry.db"))
+  (let* ((basepath  (sdat-get-twikidir s:session))
+	 (regfile   (conc basepath "/registry.db"))
 	 (regexists (file-exists? regfile))
-	 (db        (dbi:open 'sqlite3 (list (cons 'dbname regfile)))))
+	 (db        #f))
+    (if (sdat-get-debugmode s:session)
+	(s:log "regfile: " regfile " regexists: " regexists " db: " db))
+    (set! db (dbi:open 'sqlite3 (list (cons 'dbname regfile))))
     (if regexists
 	db
 	(begin
@@ -211,44 +231,25 @@ Upload the picture using the \"Pic\" link first")))))
 ;;======================================================================	
 
 ;; should change this to take a tiddler structure?
+;; This is the display of a single tiddler
 (define (twiki:view dat  tkey wid tiddler wiki) ;; close, close others, edit, more
   (let ((is-not-main  (not (equal? "MainMenu" (twiki:tiddler-get-name tiddler))))
 	(edit-allowed (member 'w (twiki:wiki-get-perms wiki))))
-    (s:div 'class "node" ;; "node"
-	   ;; (s:hr  " ")
-	   ;; (s:p 'class (if is-not-main "float-left" "float-left-menu")
-	;;    (s:p 'class (if is-not-main "float-left" "float-right")
-	;; 	(if is-not-main
-	;; 	    (s:big (s:b (twiki:tiddler-get-name tiddler)))
-	;; 	    (s:small ;; (s:b "Menu")
-	;; 		     (if edit-allowed
-	;; 			 (list "("
-	;; 			       (s:a "edit" 'href
-	;; 				    (s:link-to (twiki:get-link-back-to-current)
-	;; 					       'edit_tiddler (twiki:tiddler-get-id tiddler))) ")")
-	;; 			 '()))))
-	   (s:div 'class "tiddler"
-	    (s:p 'class "tiddlercommands"
-		    (if (equal? "MainMenu" (twiki:tiddler-get-name tiddler))
-			(if edit-allowed
-			    (list (s:a "edit" 'href
-				       (s:link-to (twiki:get-link-back-to-current)
-						  'edit_tiddler (twiki:tiddler-get-id tiddler))))
-			    '())
-			(list 
-			 (s:a "close" 'href (s:link-to (twiki:get-link-back-to-current) 'close_tiddler (twiki:tiddler-get-id tiddler))) "."
-			 (s:a "close others" 'href (s:link-to (twiki:get-link-back-to-current) 'close_other_tiddlers (twiki:tiddler-get-id tiddler))) "."
-			 (if edit-allowed
-			     (s:a "edit"  'href (s:link-to (twiki:get-link-back-to-current) 'edit_tiddler (twiki:tiddler-get-id tiddler)))
-			     '()))))
-	    ;; (s:p 'class "tiddler-skip-par" "-")
-	    ;; (s:p ".")
-	    ;; (s:p  (twiki:dat->html dat wiki) (s:br))))))
-	    (s:p (twiki:dat->html dat wiki))))))
-;; 	     (let ((twhtml (twiki:dat->html dat wiki))) ;; let's try to force a minimum of one paragraph
-;; 	      (if (< (length twhtml) 2)
-;; 		  (s:p twhtml (s:br))
-;; 		  twhtml))))))
+    (s:div 'class "tiddler"
+	   (s:div 'class "tiddler-menu"
+		  (if (equal? "MainMenu" (twiki:tiddler-get-name tiddler))
+		      (if edit-allowed
+			  (list (s:a "edit" 'href
+				     (s:link-to (twiki:get-link-back-to-current)
+						'edit_tiddler (twiki:tiddler-get-id tiddler))))
+			  '())
+		      (s:div 'class "tiddler-menu-internal"
+		       (s:a "close" 'href (s:link-to (twiki:get-link-back-to-current) 'close_tiddler (twiki:tiddler-get-id tiddler))) "."
+		       (s:a "close others" 'href (s:link-to (twiki:get-link-back-to-current) 'close_other_tiddlers (twiki:tiddler-get-id tiddler))) "."
+		       (if edit-allowed
+			   (s:a "edit"  'href (s:link-to (twiki:get-link-back-to-current) 'edit_tiddler (twiki:tiddler-get-id tiddler)))
+			   '()))))
+	    (s:p (twiki:dat->html dat wiki)))))
 
 (define (twiki:view-tiddler db  tkey wid tiddler wiki)
   (let* ((dat-id (twiki:tiddler-get-dat-id tiddler))
@@ -306,7 +307,7 @@ Upload the picture using the \"Pic\" link first")))))
 
 ;; save a tiddler to the db for the twiki twik, getting data from the INPUT
 (define (twiki:save-curr-tiddler tdb wid)
-  (formdat:printall (slot-ref s:session 'formdat) s:log)
+  (formdat:printall (sdat-get-formdat s:session) s:log)
   (let* ((heading (s:get-input 'twiki_title))
 	 (body    (s:get-input 'twiki_body))
 	 (tags    (s:get-input 'twiki_tags))
@@ -362,7 +363,7 @@ Upload the picture using the \"Pic\" link first")))))
 
 ;; text=0, jpg=1, png=2
 (define (twiki:save-dat db dat type)
-  (let* ((md5sum (md5:digest dat))
+  (let* ((md5sum (message-digest-string (md5-primitive) dat)) ;; (md5-digest dat))
 	 (datid  (twiki:dat-exists? db md5sum type))
 	 (datblob (if (string? dat)
 		      (string->blob dat)
@@ -394,7 +395,7 @@ Upload the picture using the \"Pic\" link first")))))
 (define (twiki:maint_area tdb wid tkey wiki)
   (let ((maint (s:get-param 'twiki_maint))
 	(write-perm (member 'w (twiki:wiki-get-perms wiki))))
-    (s:div ;; 'class "node" 
+    (s:div 'class "twiki-menu-internal"
      (if write-perm
 	 (list (s:a "Orphans"  'href (s:link-to (twiki:get-link-back-to-current) 'twiki_maint 1))(s:br)
 	       (s:a "Pics"     'href (s:link-to (twiki:get-link-back-to-current) 'twiki_maint 2))(s:br)
@@ -492,18 +493,18 @@ Upload the picture using the \"Pic\" link first")))))
 (define (twiki:return-image-dat tdb wid pic-id)
   (let ((dat  (twiki:get-pic-dat tdb wid pic-id)))
     (s:log "twiki:return-image-dat dat is: " dat " of size: " (if (blob? dat)(blob-size dat) "[not a blob]"))
-    (slot-set! s:session 'page-type 'image)
-    (slot-set! s:session 'content-type "image/jpeg")
-    (slot-set! s:session 'alt-page-dat dat)))
+    (sdat-set-page-type!    s:session 'image)
+    (sdat-set-content-type! s:session "image/jpeg")
+    (sdat-set-alt-page-dat! s:session dat)))
     ;; (session:alt-out s:session)))
 
 ;; this one sets up the Content type, puts the data into page-dat and is done
 (define (twiki:return-thumb-dat tdb wid pic-id)
   (let ((dat  (twiki:get-thumb-dat tdb wid pic-id)))
     (s:log "twiki:return-image-dat dat is: " dat " of size: " (if (blob? dat)(blob-size dat) "[not a blob]"))
-    (slot-set! s:session 'page-type 'image)
-    (slot-set! s:session 'content-type "image/jpeg")
-    (slot-set! s:session 'alt-page-dat dat)))
+    (sdat-set-page-type!    s:session 'image)
+    (sdat-set-content-type! s:session "image/jpeg")
+    (sdat-set-alt-page-dat! s:session dat)))
     ;; (session:alt-out s:session)))
   
 (define (twiki:make-thumbnail tdb pic-id wid)
@@ -683,40 +684,26 @@ Upload the picture using the \"Pic\" link first")))))
     
     ;; get the tiddlers from the db now
     (set! result
-	  (s:table
-	   ;; ;; A header row MainMenu   WikiName    Other
-	   ;; (s:tr
-	   ;;  (s:td
-	   ;;   (let ((main-menu-tnum  (twiki:tiddler-name->id tdb "MainMenu")))
-	   ;;     (if edit-tmenu-id
-	   ;;         "MainMenu"
-	   ;;         (s:a "MainMenu" 'href (s:link-to (twiki:get-link-back-to-current) 'edit_tmenu main-menu-tnum)))))
-	   ;;  (s:td (twiki:key->fname tkey))    
-	   ;;  (s:td ""))
-	   (s:tr
-	    ;; The menu column (must do all this with css some time)
-	    ;; July 5, 2010, attempting to switch to a top menu
-	    ;; (s:td 'class "col1-tiddler" (twiki:view-tiddler tdb  tkey wid (car lmenu) wikidat))
-	    (s:td 'class "col2-tiddler" (twiki:view-tiddler tdb  tkey wid (car lmenu) wikidat) 'colspan "2"))
-	   (s:tr
-	    (s:td 'class "col2-tiddler" 
-		  ;; this is probably not needed as there is no reason to create tiddlers this way
-		  ;; (if (eq? tnumedit -1)(twiki:edit-tiddler tdb tkey wid tnumedit) '())
-		  ;; insert the picture editor window if enabled
-		  (if (equal? (s:get-param "twiki_maint") "2")(twiki:pic_mgmt tdb wid tkey) '())
-		  (if (equal? (s:get-param "twiki_maint") "4")(twiki:help 1) '())
-		  (if (not (null? tdlrs))
-		      (map (lambda (tdlr)
-			     (let ((tnum  (twiki:tiddler-get-id tdlr)))
-			       (s:log "tnum: " tnum " tnumedit: " tnumedit)
-			       (if (and tnumedit (not tedited) (equal? tnumedit tnum))
-				   (begin
-				     (set! tedited #t) ;; only allow editing one tiddler at a time
-				     (twiki:edit-tiddler tdb tkey wid tnum))
-				   (twiki:view-tiddler tdb  tkey wid tdlr wikidat))))
-			   tdlrs)
-		      '()))
-	    (s:td  'valign "top" 'class "tiddler-top" (twiki:maint_area tdb wid tkey wikidat)))))
+	  (s:div 'class "twiki"
+	   ;; float to the right the control menu
+	   (s:div 'class "twiki-main-menu" (twiki:maint_area tdb wid tkey wikidat))
+	   (twiki:view-tiddler tdb  tkey wid (car lmenu) wikidat)
+	   ;; this is probably not needed as there is no reason to create tiddlers this way
+	   ;; (if (eq? tnumedit -1)(twiki:edit-tiddler tdb tkey wid tnumedit) '())
+	   ;; insert the picture editor window if enabled
+	   (if (equal? (s:get-param "twiki_maint") "2")(twiki:pic_mgmt tdb wid tkey) '())
+	   (if (equal? (s:get-param "twiki_maint") "4")(twiki:help 1) '())
+	   (if (not (null? tdlrs))
+	       (map (lambda (tdlr)
+		      (let ((tnum  (twiki:tiddler-get-id tdlr)))
+			(s:log "tnum: " tnum " tnumedit: " tnumedit)
+			(if (and tnumedit (not tedited) (equal? tnumedit tnum))
+			    (begin
+			      (set! tedited #t) ;; only allow editing one tiddler at a time
+			      (twiki:edit-tiddler tdb tkey wid tnum))
+			    (twiki:view-tiddler tdb  tkey wid tdlr wikidat))))
+		    tdlrs)
+	       '())))
     (dbi:close tdb)
     result))
 
@@ -724,7 +711,7 @@ Upload the picture using the \"Pic\" link first")))))
 (define (twiki:get-tiddlers db wid tnames)
   (apply twiki:get-tiddlers-by-name db wid tnames))
 ;;   (let* ((tdlrs '())
-;; 	 ;; (conn   (slot-ref s:session 'conn))
+;; 	 ;; (conn   (sdat-get-conn s:session))
 ;; 	 (namelst (conc "('" (string-intersperse (map conc tnames) "','") "')"))
 ;; 	 (qry     (conc twiki:tiddler-selector " WHERE t.wiki_id=? AND t.id IN " namelst ";")))
 ;;     ;; (print qry)
@@ -742,8 +729,6 @@ Upload the picture using the \"Pic\" link first")))))
 	 (tlststr (string-intersperse (map number->string tlst) ","))
 	 (already-got (make-hash-table))
 	 (qry    (conc twiki:tiddler-selector " WHERE t.wiki_id=? AND t.id IN (" tlststr ") ORDER BY created_on DESC;")))
-	;; (conn   (slot-ref s:session 'conn))
-    ;; (print "qry: " qry)
     (dbi:for-each-row
      (lambda (row)
        (let ((tname (twiki:tiddler-get-name row)))
@@ -802,10 +787,10 @@ Upload the picture using the \"Pic\" link first")))))
 (define twiki:div        s:div)
 
 (define (twiki:web64enc str)
-  (string-substitute "=" "_" (base64:encode str) #t))
+  (string-substitute "=" "_" (base64:base64-encode str) #t))
 
 (define (twiki:web64dec str)
-  (base64:decode (string-substitute "_" "=" str #t)))
+  (base64:base64-decode (string-substitute "_" "=" str #t)))
     
 (define (twiki:make-tlink text tiddlername)
   (s:a text 'href (s:link-to (twiki:get-link-back-to-current) 'view_tiddler (twiki:web64enc tiddlername))))

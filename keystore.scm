@@ -1,4 +1,4 @@
-;; Copyright 2007-2008, Matthew Welland.
+;; Copyright 2007-2011, Matthew Welland.
 ;; 
 ;;  This program is made available under the GNU GPL version 2.0 or
 ;;  greater. See the accompanying file COPYING for details.
@@ -11,6 +11,8 @@
 ;; The meta data key store, just a general dumping ground for values
 ;; only used occasionally
 ;;======================================================================
+
+(declare (unit keystore))
 
 (define (keystore:get db key)
   (dbi:get-one db "SELECT value FROM metadata WHERE key=?;" key))

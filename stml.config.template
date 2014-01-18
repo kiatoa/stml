@@ -1,8 +1,8 @@
-(list sroot   "/path/to/{pages,models}/dir"
-      logfile "/tmp/stmlrun/logs.log"     ;; this is now required!
-      dbtype  'sqlite3 ;; or 'pg
-      dbinit  '((dbname   . "test-stml.db")
-                (user     . "nobody")
-                (password . "Dapassword")
-                (host     . "localhost"))
-      domain  "192.168.1.150")
+'(sroot   "/path/to/{pages,models}/dir"
+  logfile "/tmp/stmlrun/logs.log"
+  dbtype  sqlite3
+  dbinit   ((dbname   . "test-stml.db")
+            (user     . "nobody")
+            (password . "Dapassword")
+            (host     . "localhost"))
+  domain  "192.168.1.150")

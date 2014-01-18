@@ -1,0 +1,46 @@
+#|
+telnet localhost 80
+GET cgi-bin/kiatoa/twiki?image=4&wiki_key=bG9jYXRpb25zIHdvcmxk HTTP/1.1
+Accept: */*
+Accept-Language: en-us
+Connection: Keep-Alive
+Host: localhost
+Referer: http://localhost/links.asp
+User-Agent: Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.0)
+Accept-Encoding: gzip, deflate
+
+GET /kiatoa/images/kiatoa.png HTTP/1.1
+Accept: */*
+Accept-Language: en-us
+Connection: Keep-Alive
+Host: localhost
+Referer: http://localhost/links.asp
+
+GET index.html HTTP/1.1
+Accept: */*
+Accept-Language: en-us
+Connection: Keep-Alive
+Host: localhost
+Referer: http://localhost/links.asp
+
+GET /cgi-bin/kiatoa/twiki?image=2&wiki_key=bG9jYXRpb25zIHdvcmxk HTTP/1.1
+Accept: */*
+Accept-Language: en-us
+Connection: Keep-Alive
+Host: localhost
+Referer: http://192.168.2.1/cgi-bin/kiatoa/location/?twiki_maint=2
+User-Agent: Mozilla/4.0
+Accept-Encoding: gzip, deflate
+
+HTTP/1.1 200 OK
+Date: Tue, 01 Sep 2009 02:18:16 GMT
+Server: Apache/2.2.11 (Ubuntu) PHP/5.2.6-3ubuntu4.2 with Suhosin-Patch
+Last-Modified: Sun, 19 Jul 2009 02:47:52 GMT
+ETag: "a38005-12c2-46f060c330600"
+Accept-Ranges: bytes
+Content-Length: 4802
+Keep-Alive: timeout=15, max=100
+Connection: Keep-Alive
+Content-Type: image/png
+
+|#

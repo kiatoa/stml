@@ -1,0 +1,56 @@
+STML User Manual
+================
+Matt Welland <matt@kiatoa.com>
+v1.0, 2012-6
+
+FriendMaker is a minimalistic tool to help bring like-minded people together on sites such Second Life.
+
+:numbered!:
+[abstract]
+Example Abstract
+----------------
+
+Yada about stml
+
+:numbered:
+
+User Data Specification
+-----------------------
+
+.User Data
+[width="100%",options="header",cols="<s,2m,2e,2e,2e",frame="topbot"]
+|==============================
+| Field            | Field Template    |Short form| Example                              | Description
+| Likes            | :likes            |:l        | :likes rock, jazz, blues             | List of things liked, used to narrow down music liked etc.
+|==============================
+
+.Example stuff
+-----------------------------
+stuff eh
+-----------------------------
+
+// -----------------------
+
+<<<<<<<<<<<<<<<<<
+
+Plan
+----
+
+Today
+~~~~~
+
+. Nothing scheduled
+
+Done Stuff
+~~~~~~~~~~
+
+Phase 3
+~~~~~~~
+
+. Error printing with debug levels
+. Complete the manual
+. Get working with Chromium, test with Internet Explorer and other browsers
+
+Notes
+-----
+

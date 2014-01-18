@@ -1,23 +1,33 @@
 Gotchas!
 =======
 
-1. All items for a page *must* be part of a list!
+All items for a page *must* be part of a list!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    OK:     (list (function1 param1)(function2 param2))
    NOT OK: (begin (function1 param1)(function2 param2))
 
 
 Various components
-==================
+~~~~~~~~~~~~~~~~~~
 
-======================================================================
-1. Create a link.
+The URL:
+
+http://the.domain.com/pagename/p1/p2/p3?param1=value1
+
+(s:get-page-params) => '("p1" "p2")
+
+
+Create a link.
+~~~~~~~~~~~~~~
 
 (s:null "[" (s:a name 'href 
                (s:link-to (string-append "location/" (string-intersperse p "/") ""))) "] ")))
 
-======================================================================
-2. Call current page with new param
+
+
+Call current page with new param
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In view.scm:
 
@@ -33,8 +43,9 @@ In control.scm:
 (let ((poll-id (s:get-param 'id)))
  ;; do stuff based on poll-id
 
-======================================================================
-3. Call an action on a specific page
+
+Call an action on a specific page
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  (s:a 'href (s:link-to "polls" 'id (poll:poll 'get 'id) 
 			       'action "poll.edit")
@@ -42,8 +53,9 @@ In control.scm:
 
  NOT TRUE! This calls fuction poll.edit (should be in control.scm). Parameter set is 'id to a poll num.
 
-======================================================================
-4. A complex link example
+
+A complex link example
+~~~~~~~~~~~~~~~~~~~~~~
 
 (s:a "Reply" 'href (s:link-to (s:current-page) 
 	           'action "discussion.reply" ;; <page>.<action>
@@ -52,8 +64,9 @@ In control.scm:
 
 ;; use (s:get-param to get the 'id, or 'reply_to values
 
-======================================================================
-5. Get and set a session var
+
+Get and set a session var
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 (s:session-var-get "keyname")
 (s:session-var-set! "keyname" "value")
@@ -63,8 +76,9 @@ In control.scm:
 (s:set! key val)
 (s:get key)
 
-======================================================================
-6. make a selection drop down
+
+make a selection drop down
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In view.scm: 
 
@@ -75,8 +89,9 @@ In control.scm:
 (let ((scope (s:get-input 'scope)))
   ....
 
-======================================================================
-7. Simple error reporting
+
+Simple error reporting
+~~~~~~~~~~~~~~~~~~~~~~
 
 In control.scm:
 (s:set-err "You must provide an email address")
@@ -87,8 +102,22 @@ In view.scm:
 Or:
 (s:get-err (lambda (x)(s:err-font x (s:br))))
 
-======================================================================
-8. Misc useful stuff
+
+Sharing data between pages
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: This data is *not* preserved between cgi calls.
+
+;; In first page called
+(s:shared-set! "somekey" somevalue)
+
+;; In a page called later
+(let ((dat (s:shared-get "somekey")))
+  ( .... ))
+
+
+Misc useful stuff
+~~~~~~~~~~~~~~~~~
 
   i. Lazy/safe string->number 
 
@@ -102,8 +131,9 @@ Or:
  
 (s:any->pgint val)
 
-======================================================================
-9. Forms and input
+
+Forms and input
+~~~~~~~~~~~~~~~
 
 (s:form 'action "login.login" 'method "post"
    (s:input-preserve 'type "text" 'name "email-address" 'size "16" 'maxlength "30")
@@ -113,7 +143,4 @@ Or:
 
 To preserve the input simply do a set of the value on the 'name field:
 (s:set! "email-address" "matt@kiatoa.com")
-
-======================================================================
-10. 
 

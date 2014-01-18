@@ -1,4 +1,4 @@
-;; Copyright 2007-2008, Matthew Welland.
+;; Copyright 2007-2011, Matthew Welland.
 ;; 
 ;;  This program is made available under the GNU GPL version 2.0 or
 ;;  greater. See the accompanying file COPYING for details.
@@ -7,7 +7,9 @@
 ;;  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 ;;  PURPOSE.
 
-(include "requirements.scm")
+(declare (unit formdat))
+(use regex)
+(require-extension srfi-69)
 
 (define formdat:*debug* #f)
 
@@ -22,23 +24,24 @@
 ;;
 ;; New data format is only the <formdat> portion from above
 
-(define-class <formdat> ()
-   (form-data
-   ))
+;; (define-class <formdat> ()
+;;    (form-data
+;;    ))
+(define (make-formdat:formdat)(vector (make-hash-table)))
+(define-inline (formdat:formdat-get-data   vec)    (vector-ref  vec 0))
+(define-inline (formdat:formdat-set-data!  vec val)(vector-set! vec 0 val))
 
-(define-method (initialize (self <formdat>) initargs)
-  (call-next-method)
-  (slot-set! self 'form-data (make-hash-table))
-  (initialize-slots self initargs))
+(define (formdat:initialize self)
+  (formdat:formdat-set-data! self (make-hash-table)))
 
-(define-method (formdat:get (self <formdat>) key)
-  (hash-table-ref/default (slot-ref self 'form-data) key #f))
+(define (formdat:get self key)
+  (hash-table-ref/default (formdat:formdat-get-data self) key #f))
 
 ;; change to convert data to list and append val if already exists
 ;; or is a list
-(define-method (formdat:set! (self <formdat>) key val)
+(define (formdat:set! self key val)
   (let ((prev-val (formdat:get self key))
-        (ht       (slot-ref self 'form-data)))
+        (ht       (formdat:formdat-get-data self)))
     (if prev-val
         (if (list? prev-val)
             (hash-table-set! ht key (cons val prev-val))
@@ -46,16 +49,16 @@
         (hash-table-set! ht key val))
     self))
 
-(define-method (formdat:keys (self <formdat>))
-  (hash-table-keys (slot-ref self 'form-data)))
+(define (formdat:keys self)
+  (hash-table-keys (formdat:formdat-get-data self)))
 
-(define-method (formdat:printall (self <formdat>) printproc)
+(define (formdat:printall self printproc)
   (printproc "formdat:printall " (formdat:keys self))
   (for-each (lambda (k)
 	      (printproc k " => " (formdat:get self k)))
 	    (formdat:keys self)))
 
-(define-method (formdat:all->strings (self <formdat>))
+(define (formdat:all->strings self)
   (let ((res '()))
     (for-each (lambda (k)
                  (set! res (cons (conc k "=>" (formdat:get self k)) res)))
@@ -63,8 +66,8 @@
         res))
 
 ;; call with *one* of the lists in the list of lists created by CGI:url-unquote
-(define-method (formdat:load (self <formdat>) formlist)
-  (let ((ht             (slot-ref self 'form-data)))
+(define (formdat:load self formlist)
+  (let ((ht             (formdat:formdat-get-data self)))
     (if (null? formlist) self ;; no values provided, return self for no good reason
         (let loop ((head (car formlist))
                    (tail (cdr formlist)))
@@ -148,16 +151,17 @@
 
 ;; returns a hash with entries for all forms - could well use a proplist?
 (define (formdat:load-all)
-  (let ((request-method (getenv "REQUEST_METHOD")))
+  (let ((request-method (get-environment-variable "REQUEST_METHOD")))
     (if (and request-method
 	     (string=? request-method "POST"))
 	(formdat:load-all-port (current-input-port)))))
 
 ;; (s:process-cgi-input (caaar dat))
 (define (formdat:load-all-port inp)
-  (let* ((formdat        (make <formdat>)))
+  (let* ((formdat        (make-formdat:formdat)))
 ;;	 (debugp         (open-output-file (conc (slot-ref s:session 'sroot) "/delme-" (current-user-id) ".log"))))
     ;; (write-string (read-string #f inp) #f debugp)
+    (formdat:initialize formdat)
     (let ((alldats (formdat:dat->list inp 10e6)))
       
       ;; (format debugp "formdat : alldats: ~A\n" alldats)

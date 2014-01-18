@@ -6,26 +6,33 @@
 #  This program is distributed WITHOUT ANY WARRANTY; without even the
 #  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 #  PURPOSE.
-
+#
+# Following needed on bluehost
+#
+# CSC_OPTIONS='-C "-fPIC"' make
+#
 include install.cfg
 
+SRCFILES    = stml.scm misc-stml.scm session.scm sqltbl.scm formdat.scm setup.scm keystore.scm html-filter.scm cookie.scm 
 MODULEFILES = $(wildcard modules/*/*-mod.scm)
 SOFILES     = $(MODULEFILES:%.scm=%.so)
 CFILES      = $(MODULEFILES:%.scm=%.c)
-OFILES      = $(MODULEFILES:%.scm=%.o)
+OFILES      = $(SRCFILES:%.scm=%.o)
 TARGFILES   = $(notdir $(SOFILES))
 MODULES     = $(addprefix $(TARGDIR)/modules/,$(TARGFILES))
 
 install : $(TARGDIR)/stmlrun $(LOGDIR) $(MODULES)
+	chicken-install
 
-stmlrun : stmlrun.scm formdat.scm  misc-stml.scm  session.scm stml.scm \
-          setup.scm html-filter.scm requirements.scm keystore.scm \
-          sugar.scm
-	csc stmlrun.scm
+all : $(SOFILES)
 
+# stmlrun : stmlrun.scm formdat.scm  misc-stml.scm  session.scm stml.scm \
+#           setup.scm html-filter.scm requirements.scm keystore.scm \
+#           cookie.scm sqltbl.scm
+# 	csc stmlrun.scm
 
-$(TARGDIR)/stmlrun : stmlrun 
-	cp stmlrun $(TARGDIR)
+$(TARGDIR)/stmlrun : stmlrun stml.so
+	install stmlrun $(TARGDIR)
 	chmod a+rx $(TARGDIR)/stmlrun
 
 $(TARGDIR)/modules :
@@ -34,13 +41,22 @@ $(TARGDIR)/modules :
 $(MODULES) : $(SOFILES) $(TARGDIR)/modules
 	cp $< $@
 
+stmlrun : $(OFILES) stmlrun.scm requirements.scm stmlcommon.scm
+	csc $(OFILES) stmlrun.scm -o stmlrun
+
+stml.so : stmlmodule.so
+	cp stmlmodule.so stml.so
+
+stmlmodule.so : $(OFILES) stmlmodule.scm requirements.scm stmlcommon.scm
+	csc $(OFILES) -s stmlmodule.scm
+
 # logging currently relies on this
 #
 $(LOGDIR) :
 	mkdir -p $(LOGDIR)
 	chmod a+rwx $(LOGDIR)
 
-test: kiatoa.db
+test: kiatoa.db cookie.so
 	echo '(exit)'| csi -q  ./tests/test.scm 
 
 # modules
@@ -48,14 +64,15 @@ test: kiatoa.db
 %.so : %.scm
 	csc -I modules/* -s $<
 
-all : $(SOFILES)
+%.o : %.scm
+	csc -c $<
 
-dbi.so : dbi.scm
-	csc -i dbi.scm
+# Cookie is a special case for now. Make a loadable so for test
+# Complile it in by include (see dependencies above).
+cookie.so : cookie.scm
+	csc -s cookie.scm
 
-installdbi : dbi.so
-	cp dbi.so /usr/local/lib/chicken/3/
-# 
+
 # $(CFILES): build/%.c: ../scm/%.scm ../scm/macros.scm
 # 	chicken $< -output-file $@
 # 

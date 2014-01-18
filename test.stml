@@ -1,0 +1,10 @@
+;; Copyright 2007-2008, Matthew Welland. Kiatoa.com All rights reserved.
+;; 
+;; index
+
+(list
+ (s:html
+  (s:head
+   (s:title "Kiatoa")
+   (s:link  'rel "stylesheet" 'type "text/css" 'href "/kiatoa/markup.css")
+   (s:link  'rel "stylesheet" 'type "text/css" 'href "/kiatoa/layout.css"))))

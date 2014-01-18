@@ -1,4 +1,4 @@
-;; Copyright 2007-2008, Matthew Welland.
+;; Copyright 2007-2011, Matthew Welland.
 ;; 
 ;;  This program is made available under the GNU GPL version 2.0 or
 ;;  greater. See the accompanying file COPYING for details.
@@ -10,6 +10,9 @@
 ;;======================================================================
 ;; dumbobj helpers
 ;;======================================================================
+
+(declare (unit misc-stml))
+(use regex)
 
 ;; given a list of symbols give the count of the matching symbol
 ;; l => '(a b c)  (dumobj:indx a 'b) => 1
@@ -151,8 +154,8 @@
 			     (s:p err)))))))
 
 (define (s:validate-uri)
-  (let ((uri (getenv "REQUEST_URI"))
-	(qrs (getenv "QUERY_STRING")))
+  (let ((uri (get-environment-variable "REQUEST_URI"))
+	(qrs (get-environment-variable "QUERY_STRING")))
     (if (not uri)
 	(set! uri qrs))
     (if uri
@@ -169,11 +172,12 @@
 	  #t))))
 
 (define (s:validate-inputs)
-  (if (not (s:validate-uri))(begin (s:error-page "Bad URI" (let ((ref (getenv "HTTP_REFERER")))
-							     (if ref
-								 (list "referred from" ref)
-								 "")))
-				   (exit))))
+  (if (not (s:validate-uri))
+      (begin (s:error-page "Bad URI" (let ((ref (get-environment-variable "HTTP_REFERER")))
+				       (if ref
+					   (list "referred from" ref)
+					   "")))
+	     (exit))))
 
 ;; anything except a list is converted to a string!!!
 (define (s:any->string val)

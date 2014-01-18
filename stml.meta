@@ -1,0 +1,20 @@
+(
+; Your egg's license:
+(license "LGPL")
+
+; Pick one from the list of categories (see below) for your egg and enter it
+; here.
+(category misc)
+
+; A list of eggs mpeg3 depends on.  If none, you can omit this declaration
+; altogether. If you are making an egg for chicken 3 and you need to use
+; procedures from the `files' unit, be sure to include the `files' egg in the
+; `needs' section (chicken versions < 3.4.0 don't provide the `files' unit).
+; `depends' is an alias to `needs'.
+(needs srfi-69)
+
+; A list of eggs required for TESTING ONLY.  See the `Tests' section.
+(test-depends test)
+
+(author "Matt Welland")
+(synopsis "Primitive argument processor."))
